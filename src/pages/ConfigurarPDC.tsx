@@ -1,6 +1,7 @@
 import { PDCConfigForm } from "@/components/PDCConfigForm";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import logoAida from "@/assets/logo_aida.png";
 
 const ConfigurarPDC = () => {
   return (
@@ -13,9 +14,7 @@ const ConfigurarPDC = () => {
           <header className="h-16 flex items-center border-b border-border/20 px-6 bg-background/95 backdrop-blur-sm">
             <SidebarTrigger className="mr-4" />
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">A</span>
-              </div>
+              <img src={logoAida} alt="Logo Aida" className="w-8 h-8 object-contain" />
               <span className="text-xl font-bold text-foreground">Aida</span>
             </div>
           </header>

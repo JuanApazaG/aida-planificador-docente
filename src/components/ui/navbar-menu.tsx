@@ -76,11 +76,17 @@ export const Menu = ({
 };
 
 export const HoveredLink = ({ children, onClick, ...rest }: any) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick?.(e);
+  };
+
   return (
     <button
       {...rest}
-      onClick={onClick}
-      className="text-muted-foreground hover:text-primary transition-colors duration-300 text-left"
+      onClick={handleClick}
+      className="text-muted-foreground hover:text-primary transition-colors duration-300 text-left w-full text-left"
     >
       {children}
     </button>

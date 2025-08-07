@@ -1,5 +1,62 @@
 import { Button } from "@/components/ui/button";
 import { HighlightGroup, HighlighterItem, Particles } from "@/components/ui/highlighter";
+import { Menu, MenuItem, HoveredLink } from "@/components/ui/navbar-menu";
+import { useState } from "react";
+
+const AnimatedNav = () => {
+  const [active, setActive] = useState<string | null>(null);
+  
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  return (
+    <Menu setActive={setActive}>
+      <MenuItem setActive={setActive} active={active} item="¿Cómo funciona?">
+        <div className="flex flex-col space-y-4 text-sm">
+          <HoveredLink onClick={() => scrollToSection('proceso')}>
+            Proceso de generación
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('caracteristicas')}>
+            Características principales
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('ejemplos')}>
+            Ejemplos de PDC
+          </HoveredLink>
+        </div>
+      </MenuItem>
+      <MenuItem setActive={setActive} active={active} item="Beneficios">
+        <div className="flex flex-col space-y-4 text-sm">
+          <HoveredLink onClick={() => scrollToSection('ahorro-tiempo')}>
+            Ahorro de tiempo
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('calidad')}>
+            Calidad educativa
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('facilidad')}>
+            Facilidad de uso
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('soporte')}>
+            Soporte continuo
+          </HoveredLink>
+        </div>
+      </MenuItem>
+      <MenuItem setActive={setActive} active={active} item="Iniciar">
+        <div className="flex flex-col space-y-4 text-sm">
+          <HoveredLink onClick={() => scrollToSection('registro')}>
+            Crear cuenta gratuita
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('tutorial')}>
+            Tutorial paso a paso
+          </HoveredLink>
+          <HoveredLink onClick={() => scrollToSection('precios')}>
+            Ver planes
+          </HoveredLink>
+        </div>
+      </MenuItem>
+    </Menu>
+  );
+};
 
 const Header = () => {
   const scrollToSection = (id: string) => {
@@ -28,29 +85,9 @@ const Header = () => {
                 </div>
 
                 {/* Navigation - Desktop */}
-                <nav className="hidden md:flex items-center space-x-8">
-                  <button 
-                    onClick={() => scrollToSection('como-funciona')}
-                    className="text-muted-foreground hover:text-primary transition-colors duration-300 relative group/link"
-                  >
-                    <span className="relative z-10">¿Cómo funciona?</span>
-                    <div className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary scale-x-0 group-hover/link:scale-x-100 transition-transform duration-300"></div>
-                  </button>
-                  <button 
-                    onClick={() => scrollToSection('beneficios')}
-                    className="text-muted-foreground hover:text-primary transition-colors duration-300 relative group/link"
-                  >
-                    <span className="relative z-10">Beneficios</span>
-                    <div className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary scale-x-0 group-hover/link:scale-x-100 transition-transform duration-300"></div>
-                  </button>
-                  <button 
-                    onClick={() => scrollToSection('iniciar')}
-                    className="text-muted-foreground hover:text-primary transition-colors duration-300 relative group/link"
-                  >
-                    <span className="relative z-10">Iniciar</span>
-                    <div className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary scale-x-0 group-hover/link:scale-x-100 transition-transform duration-300"></div>
-                  </button>
-                </nav>
+                <div className="hidden md:block">
+                  <AnimatedNav />
+                </div>
 
                 {/* CTA Button */}
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5">

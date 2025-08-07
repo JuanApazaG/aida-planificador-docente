@@ -31,10 +31,7 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center space-x-3 group cursor-pointer">
-            <div className="relative">
-              <img src={logoAida} alt="Logo Aida" className="w-10 h-10 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 bg-white object-contain" />
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
+              <img src={logoAida} alt="Logo Aida" className="w-10 h-10 object-contain" />
             <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
               Aida
             </span>

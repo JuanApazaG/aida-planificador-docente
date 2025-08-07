@@ -10,7 +10,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="py-20 lg:py-32 bg-gradient-to-br from-primary-light/30 via-background to-primary-light/20">
+    <section id="registro" className="py-20 lg:py-32 bg-gradient-to-br from-primary-light/30 via-background to-primary-light/20">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8 fade-in">

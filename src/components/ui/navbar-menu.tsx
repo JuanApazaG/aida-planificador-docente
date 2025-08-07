@@ -23,35 +23,37 @@ export const MenuItem = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <div onMouseEnter={() => setActive(item)} className="relative ">
+    <div 
+      onMouseEnter={() => setActive(item)} 
+      onMouseLeave={() => setActive(null)}
+      className="relative"
+    >
       <motion.p
         transition={{ duration: 0.3 }}
-        className="cursor-pointer text-muted-foreground hover:text-primary transition-colors duration-300"
+        className="cursor-pointer text-muted-foreground hover:text-primary transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-muted/50"
       >
         {item}
       </motion.p>
-      {active !== null && (
+      {active === item && (
         <motion.div
           initial={{ opacity: 0, scale: 0.85, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.85, y: 10 }}
           transition={transition}
+          className="absolute top-[calc(100%_+_0.5rem)] left-1/2 transform -translate-x-1/2 pt-2 z-[100]"
         >
-          {active === item && (
-            <div className="absolute top-[calc(100%_+_1.2rem)] left-1/2 transform -translate-x-1/2 pt-4 z-[100]">
-              <motion.div
-                transition={transition}
-                layoutId="active"
-                className="bg-background/95 backdrop-blur-sm rounded-2xl overflow-hidden border border-border/20 shadow-xl"
-              >
-                <motion.div
-                  layout
-                  className="w-max h-full p-4"
-                >
-                  {children}
-                </motion.div>
-              </motion.div>
-            </div>
-          )}
+          <motion.div
+            transition={transition}
+            layoutId="active"
+            className="bg-background/95 backdrop-blur-sm rounded-2xl overflow-hidden border border-border/20 shadow-xl min-w-[200px]"
+          >
+            <motion.div
+              layout
+              className="w-full h-full p-4"
+            >
+              {children}
+            </motion.div>
+          </motion.div>
         </motion.div>
       )}
     </div>
@@ -68,25 +70,34 @@ export const Menu = ({
   return (
     <nav
       onMouseLeave={() => setActive(null)}
-      className="relative rounded-full border border-border/20 bg-background/95 backdrop-blur-sm flex justify-center space-x-8 px-6 py-3"
+      className="relative rounded-full border border-border/20 bg-background/95 backdrop-blur-sm flex justify-center space-x-4 px-6 py-3"
     >
       {children}
     </nav>
   );
 };
 
-export const HoveredLink = ({ children, onClick, ...rest }: any) => {
+export const HoveredLink = ({ 
+  children, 
+  onClick, 
+  ...rest 
+}: {
+  children: React.ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onClick?.(e);
+    if (onClick) {
+      onClick(e);
+    }
   };
 
   return (
     <button
       {...rest}
       onClick={handleClick}
-      className="text-muted-foreground hover:text-primary transition-colors duration-300 text-left w-full text-left"
+      className="text-muted-foreground hover:text-primary transition-colors duration-300 text-left w-full py-2 px-3 rounded-lg hover:bg-muted/30"
     >
       {children}
     </button>

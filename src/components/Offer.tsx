@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 const Offer = () => {
   return (
-    <section id="iniciar" className="py-20 bg-gradient-to-br from-primary/5 to-accent/5">
+    <section id="precios" className="py-20 bg-gradient-to-br from-primary/5 to-accent/5">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-12">

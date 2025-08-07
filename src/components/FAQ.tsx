@@ -8,42 +8,47 @@ import {
 const FAQ = () => {
   const faqs = [
     {
-      question: "¿Qué necesito para comenzar?",
-      answer: "Solo tu archivo PAT y saber qué temas quieres enseñar este mes."
+      question: "¿Qué es un PDC?",
+      answer: "El Plan de Desarrollo Curricular (PDC) es un documento que los docentes deben presentar mensualmente, detallando los contenidos, actividades y evaluaciones que se desarrollarán en el aula."
     },
     {
-      question: "¿Aida funciona para primaria y secundaria?",
-      answer: "Sí, se adapta según el nivel y curso."
+      question: "¿Cómo funciona Aida?",
+      answer: "Subes tu PAT (Plan Anual de Trabajo) una vez, seleccionas los contenidos que quieres incluir en el mes, y Aida genera automáticamente tu PDC con formato profesional."
     },
     {
-      question: "¿Mi información está segura?",
-      answer: "Usamos servidores protegidos. Tus documentos no se comparten."
+      question: "¿Es compatible con el sistema educativo boliviano?",
+      answer: "Sí, Aida está diseñada específicamente para cumplir con los estándares y formatos requeridos por el sistema educativo boliviano."
+    },
+    {
+      question: "¿Puedo personalizar el PDC generado?",
+      answer: "Absolutamente. Puedes editar, agregar o modificar cualquier sección del PDC antes de descargarlo."
     }
   ];
 
   return (
-    <section className="py-20 bg-background">
+    <section id="ejemplos" className="py-20 bg-gradient-to-br from-secondary/20 to-background">
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-6">
-              Preguntas Frecuentes
-            </h2>
-          </div>
-          
-          <div className="card-aida">
-            <Accordion type="single" collapsible className="w-full">
-              {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left text-lg font-medium">
-                    ❓ {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-6">
+            Preguntas frecuentes
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Resolvemos las dudas más comunes sobre Aida y el proceso de generación de PDC.
+          </p>
+        </div>
+        
+        <div className="max-w-4xl mx-auto">
+          <div className="grid gap-6">
+            {faqs.map((faq, index) => (
+              <div key={index} className="card-aida">
+                <h3 className="text-xl font-semibold text-foreground mb-4">
+                  {faq.question}
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

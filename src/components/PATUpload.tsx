@@ -61,16 +61,15 @@ export function PATUpload() {
     [handleFileChange],
   );
 
-  const handleGeneratePDC = () => {
-    if (!previewUrl) return;
-    
+  const handleGeneratePDC = async () => {
     setIsProcessing(true);
-    // Simular procesamiento
+    
+    // Simulate processing time
     setTimeout(() => {
       setIsProcessing(false);
-      // Aquí iría la lógica real de generación del PDC
-      alert("¡PDC generado exitosamente! En una implementación real, aquí se procesaría el archivo.");
-    }, 3000);
+      // Navigate to PDC configuration page
+      window.location.href = '/configurar-pdc';
+    }, 2000);
   };
 
   return (

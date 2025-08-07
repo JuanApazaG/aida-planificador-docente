@@ -2,96 +2,83 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 const Header = () => {
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [activeButton, setActiveButton] = useState<string | null>(null);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
     }
   };
 
-  const menuItems = [
-    {
-      label: "¿Cómo funciona?",
-      items: [
-        { label: "Proceso de generación", id: "proceso" },
-        { label: "Características principales", id: "caracteristicas" },
-        { label: "Ejemplos de PDC", id: "ejemplos" }
-      ]
-    },
-    {
-      label: "Beneficios",
-      items: [
-        { label: "Ahorro de tiempo", id: "ahorro-tiempo" },
-        { label: "Calidad educativa", id: "calidad" },
-        { label: "Facilidad de uso", id: "facilidad" },
-        { label: "Soporte continuo", id: "soporte" }
-      ]
-    },
-    {
-      label: "Iniciar",
-      items: [
-        { label: "Crear cuenta gratuita", id: "registro" },
-        { label: "Tutorial paso a paso", id: "tutorial" },
-        { label: "Ver planes", id: "precios" }
-      ]
-    }
+  const handleCTAClick = () => {
+    scrollToSection('registro');
+  };
+
+  const navItems = [
+    { label: "¿Cómo funciona?", id: "proceso" },
+    { label: "Beneficios", id: "ahorro-tiempo" },
+    { label: "Iniciar", id: "registro" }
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/80 border-b border-border/20">
       <div className="container mx-auto px-4">
-        <div className="relative overflow-hidden rounded-xl border border-border/20 bg-background/95 backdrop-blur-sm shadow-lg">
-          <div className="flex items-center justify-between py-4 px-6">
-            {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">A</span>
+        <div className="flex items-center justify-between py-4">
+          {/* Logo */}
+          <div className="flex items-center space-x-3 group cursor-pointer">
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                <span className="text-primary-foreground font-bold text-xl">A</span>
               </div>
-              <span className="text-xl font-bold text-foreground">Aida</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              Aida
+            </span>
+          </div>
 
-            {/* Navigation - Desktop */}
-            <nav className="hidden md:flex items-center space-x-6">
-              {menuItems.map((menu) => (
-                <div
-                  key={menu.label}
-                  className="relative"
-                  onMouseEnter={() => setActiveMenu(menu.label)}
-                  onMouseLeave={() => setActiveMenu(null)}
-                >
-                  <button className="text-muted-foreground hover:text-primary transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-muted/50">
-                    {menu.label}
-                  </button>
-                  
-                  {activeMenu === menu.label && (
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 pt-2 z-50">
-                      <div className="bg-background/95 backdrop-blur-sm rounded-2xl border border-border/20 shadow-xl min-w-[200px] p-4">
-                        <div className="flex flex-col space-y-2">
-                          {menu.items.map((item) => (
-                            <button
-                              key={item.id}
-                              onClick={() => scrollToSection(item.id)}
-                              className="text-left text-muted-foreground hover:text-primary transition-colors duration-300 py-2 px-3 rounded-lg hover:bg-muted/30"
-                            >
-                              {item.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </nav>
+          {/* Navigation - Desktop */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {navItems.map((item) => (
+              <button 
+                key={item.id}
+                className={`relative px-6 py-3 rounded-xl font-medium transition-all duration-300 group ${
+                  activeButton === item.id 
+                    ? 'text-primary bg-primary/10 border border-primary/20' 
+                    : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
+                }`}
+                onClick={() => {
+                  setActiveButton(item.id);
+                  scrollToSection(item.id);
+                }}
+                onMouseEnter={() => setActiveButton(item.id)}
+                onMouseLeave={() => setActiveButton(null)}
+              >
+                <span className="relative z-10">{item.label}</span>
+                <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${
+                  activeButton === item.id 
+                    ? 'bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20' 
+                    : 'bg-transparent group-hover:bg-gradient-to-r group-hover:from-muted/30 group-hover:to-muted/10'
+                }`}></div>
+              </button>
+            ))}
+          </nav>
 
-            {/* CTA Button */}
+          {/* CTA Button */}
+          <div className="relative">
             <Button 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5"
-              onClick={() => scrollToSection('registro')}
+              className="relative bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 group overflow-hidden"
+              onClick={handleCTAClick}
             >
-              Comienza gratis
+              <span className="relative z-10 flex items-center space-x-2">
+                <span>🚀</span>
+                <span>Comienza gratis</span>
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </Button>
           </div>
         </div>

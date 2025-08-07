@@ -150,23 +150,6 @@ export function PATUpload() {
               </div>
 
               <div className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20">
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Opciones de generación</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Selecciona el tipo de Plan de Desarrollo Curricular que deseas generar
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors cursor-pointer">
-                    <h5 className="font-medium text-foreground">PDC Mensual</h5>
-                    <p className="text-sm text-muted-foreground">Planificación completa para todo el mes</p>
-                  </div>
-                  <div className="p-4 rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors cursor-pointer">
-                    <h5 className="font-medium text-foreground">PDC Quincenal</h5>
-                    <p className="text-sm text-muted-foreground">Planificación detallada por quincenas</p>
-                  </div>
-                </div>
 
                 <Button 
                   onClick={handleGeneratePDC}

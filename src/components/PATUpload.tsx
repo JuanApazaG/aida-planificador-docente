@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useImageUpload } from "@/hooks/use-image-upload";
-import { FileText, X, Upload, Trash2, CheckCircle } from "lucide-react";
+import { FileText, X, Upload, Trash2, CheckCircle, AlertCircle } from "lucide-react";
 import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
+import { simulationService, apiService } from "@/config/backend";
 
 export function PATUpload() {
   const {
@@ -19,6 +20,9 @@ export function PATUpload() {
 
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [fileId, setFileId] = useState<string | null>(null);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -45,7 +49,6 @@ export function PATUpload() {
 
       const file = e.dataTransfer.files?.[0];
       if (file && (file.type.includes("pdf") || file.type.includes("image") || file.type.includes("document"))) {
-        // Simular el evento de input file
         if (fileInputRef.current) {
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(file);
@@ -62,14 +65,57 @@ export function PATUpload() {
   );
 
   const handleGeneratePDC = async () => {
+    if (!fileName) return;
+
     setIsProcessing(true);
-    
-    // Simulate processing time
-    setTimeout(() => {
-      setIsProcessing(false);
-      // Navigate to PDC configuration page
+    setError(null);
+    setUploadProgress(0);
+
+    try {
+      // Simular progreso de subida
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      // Obtener el archivo real del input
+      const file = fileInputRef.current?.files?.[0];
+      if (!file) {
+        throw new Error("No se encontró el archivo");
+      }
+
+      // ===== SUBIDA AL BACKEND =====
+      // TODO: Cambiar a apiService cuando el backend esté listo
+      const uploadResult = await simulationService.uploadPAT(file);
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || "Error al subir el archivo");
+      }
+
+      setFileId(uploadResult.fileId!);
+      setUploadProgress(100);
+
+      // ===== GENERACIÓN DE PDC =====
+      // TODO: Cambiar a apiService cuando el backend esté listo
+      const generateResult = await simulationService.generatePDC(uploadResult.fileId!);
+      if (!generateResult.success) {
+        throw new Error(generateResult.error || "Error al generar el PDC");
+      }
+
+      // Navegar a la página de configuración
       window.location.href = '/configurar-pdc';
-    }, 2000);
+
+    } catch (error) {
+      console.error('Error en el proceso:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setIsProcessing(false);
+      setUploadProgress(0);
+    }
   };
 
   return (
@@ -149,8 +195,34 @@ export function PATUpload() {
                 </div>
               </div>
 
-              <div className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20">
+              {/* Error Display */}
+              {error && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                  <div>
+                    <p className="font-medium text-destructive">Error en el proceso</p>
+                    <p className="text-sm text-destructive/80">{error}</p>
+                  </div>
+                </div>
+              )}
 
+              {/* Progress Bar */}
+              {isProcessing && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Procesando archivo...</span>
+                    <span className="text-primary font-medium">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4 p-6 rounded-xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20">
                 <Button 
                   onClick={handleGeneratePDC}
                   disabled={isProcessing}
@@ -159,7 +231,7 @@ export function PATUpload() {
                   {isProcessing ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      Generando PDC...
+                      {uploadProgress < 50 ? "Subiendo archivo..." : "Generando PDC..."}
                     </>
                   ) : (
                     <>

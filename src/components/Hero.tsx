@@ -1,7 +1,14 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import pdcMockup from "@/assets/pdc-mockup.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleGeneratePDC = () => {
+    navigate("/generar-pdc");
+  };
+
   return (
     <section className="py-20 lg:py-32 bg-gradient-to-br from-primary-light/30 via-background to-primary-light/20">
       <div className="container mx-auto px-4">
@@ -19,7 +26,10 @@ const Hero = () => {
             </div>
             
             <div className="space-y-4">
-              <Button className="btn-primary text-lg px-8 py-4 pulse-cta">
+              <Button 
+                onClick={handleGeneratePDC}
+                className="btn-primary text-lg px-8 py-4 pulse-cta"
+              >
                 <span className="mr-2">✅</span>
                 Subir mi PAT y generar mi PDC
               </Button>

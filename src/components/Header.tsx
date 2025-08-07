@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import logoAida from "@/assets/logo_aida.png";
 
 const Header = () => {
   const [activeButton, setActiveButton] = useState<string | null>(null);
@@ -31,9 +32,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center space-x-3 group cursor-pointer">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                <span className="text-primary-foreground font-bold text-xl">A</span>
-              </div>
+              <img src={logoAida} alt="Logo Aida" className="w-10 h-10 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 bg-white object-contain" />
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">

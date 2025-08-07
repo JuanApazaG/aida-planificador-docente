@@ -1,10 +1,10 @@
-import { 
-  Home, 
-  Sparkles, 
-  Calendar, 
-  Clock, 
-  Users, 
-  Zap, 
+import {
+  Home,
+  Sparkles,
+  Calendar,
+  Clock,
+  Users,
+  Zap,
   GraduationCap,
   ChevronDown,
   X,
@@ -13,7 +13,6 @@ import {
   LogOut
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import logoAida from "@/assets/logo_aida.png";
 
 const items = [
   { title: "Inicio", url: "/generar-pdc", icon: Home, description: "Generar PDC" },
@@ -50,9 +50,7 @@ export function AppSidebar() {
         <div className="p-6 border-b border-border/20">
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-primary-foreground font-bold text-lg">A</span>
-              </div>
+              <img src={logoAida} alt="Logo Aida" className="w-10 h-10 rounded-xl shadow-lg bg-white object-contain" />
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-xl opacity-60"></div>
             </div>
             <div>
@@ -99,9 +97,9 @@ export function AppSidebar() {
                       <div className="p-2 rounded-lg transition-all duration-300 bg-muted/50 group-hover:bg-primary/10">
                         <item.icon className="h-4 w-4" />
                       </div>
-                      <div className="flex-1">
-                        <span className="font-medium">{item.title}</span>
-                        <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                      <div className="flex flex-col items-start">
+                        <span className="text-sm font-medium">{item.title}</span>
+                        <span className="text-xs text-muted-foreground">{item.description}</span>
                       </div>
                     </NavLink>
                   </SidebarMenuButton>
@@ -110,29 +108,31 @@ export function AppSidebar() {
             </SidebarMenu>
           </div>
 
-          {/* Special items with different styling */}
+          {/* Special Items */}
           <div className="mb-6">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
               Herramientas Avanzadas
             </h3>
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1">
               {specialItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-auto group">
+                  <SidebarMenuButton asChild className="h-12 group">
                     <NavLink
                       to={item.url}
-                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-primary hover:bg-primary/10 transition-all duration-300 border border-primary/20 hover:border-primary/40"
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                          isActive
+                            ? "bg-gradient-to-r from-primary/10 to-primary/5 text-primary font-medium border border-primary/20 shadow-sm"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        }`
+                      }
                     >
-                      <div className="p-2 rounded-lg bg-primary/10">
+                      <div className="p-2 rounded-lg transition-all duration-300 bg-muted/50 group-hover:bg-primary/10">
                         <item.icon className="h-4 w-4" />
                       </div>
-                      <div className="flex-1">
-                        <span className="font-medium">{item.title}</span>
-                        {item.badge && (
-                          <span className="inline-block px-2 py-0.5 text-xs font-bold bg-primary/20 text-primary rounded-full ml-2">
-                            {item.badge}
-                          </span>
-                        )}
+                      <div className="flex flex-col items-start">
+                        <span className="text-sm font-medium">{item.title}</span>
+                        <span className="text-xs text-muted-foreground">{item.badge}</span>
                       </div>
                     </NavLink>
                   </SidebarMenuButton>
@@ -142,42 +142,18 @@ export function AppSidebar() {
           </div>
         </div>
 
-        {/* Bottom section */}
-        <div className="mt-auto p-4 border-t border-border/20 space-y-3">
-          {/* Quick Actions */}
-          <div className="space-y-2">
-            <Button 
-              variant="outline" 
-              className="w-full justify-between h-12 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 hover:bg-primary/20 transition-all duration-300 group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-accent to-accent/80 rounded-lg flex items-center justify-center text-accent-foreground text-sm font-bold">
-                  3
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-medium block">Primeros Pasos</span>
-                  <span className="text-xs text-muted-foreground">Completa tu perfil</span>
-                </div>
-              </div>
-              <ChevronDown className="h-4 w-4 group-hover:translate-y-0.5 transition-transform duration-300" />
-            </Button>
-          </div>
-
-          {/* User Actions */}
-          <div className="space-y-2">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300"
-            >
-              <Settings className="h-4 w-4 mr-3" />
+        {/* Footer */}
+        <div className="p-6 border-t border-border/20">
+          <Button variant="outline" className="w-full">
+            <BookOpen className="h-4 w-4 mr-2" />
+            Primeros Pasos
+          </Button>
+          <div className="flex items-center justify-between mt-4">
+            <Button variant="ghost" size="sm" className="flex items-center">
+              <Settings className="h-4 w-4 mr-2" />
               Configuración
             </Button>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="ghost" size="sm" className="flex items-center">
               <LogOut className="h-4 w-4 mr-3" />
               Cerrar menú
             </Button>

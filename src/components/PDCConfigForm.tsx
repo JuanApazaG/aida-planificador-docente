@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { curriculumData, grados } from "@/data/curriculum";
-import { ChevronRight, BookOpen, CheckCircle, ArrowLeft, Users, Info, FileText, Calendar, Target, Settings } from "lucide-react";
+import { ChevronRight, BookOpen, CheckCircle, ArrowLeft, Users, Info, FileText, Calendar, Target, Settings, Download } from "lucide-react";
 import { simulationService, apiService, ReferentialDataResponse, PDCConfigData } from "@/config/backend";
 import { PDCPreview } from "./PDCPreview";
 
@@ -49,10 +49,63 @@ export function PDCConfigForm() {
   const [selectedTrimestre, setSelectedTrimestre] = useState<string>("");
   const [selectedGrado, setSelectedGrado] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [referentialData, setReferentialData] = useState<ReferentialData | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [generatedPDCId, setGeneratedPDCId] = useState<string | null>(null);
   const [fileId, setFileId] = useState<string>("mock-file-id"); // TODO: Obtener del contexto o props
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string; filename?: string } | null>(null);
+
+  // ===== FUNCIÓN PARA OBTENER CONTENIDOS DINÁMICOS DEL PAT =====
+  const getDynamicContents = () => {
+    try {
+      const savedPATData = localStorage.getItem('patExtractedData');
+      if (!savedPATData) {
+        console.log('⚠️ No hay datos del PAT guardados, usando contenidos estáticos');
+        return curriculumData.contenidos;
+      }
+
+      const patData = JSON.parse(savedPATData);
+      const planCompleto = patData.datosPersonales?.PlanAnualTrimestralizado || [];
+      
+      // Filtrar por trimestre seleccionado
+      const trimestreSeleccionado = selectedTrimestre;
+      const trimestreFiltrado = planCompleto.filter(
+        trimestre => trimestre.trimestre?.toLowerCase().includes(trimestreSeleccionado)
+      );
+
+      if (trimestreFiltrado.length === 0) {
+        console.log('⚠️ No se encontraron contenidos para el trimestre seleccionado, usando contenidos estáticos');
+        return curriculumData.contenidos;
+      }
+
+      // Extraer contenidos del trimestre filtrado
+      const contenidosDelTrimestre = trimestreFiltrado[0]?.contenidos || [];
+      
+      console.log('✅ Contenidos dinámicos cargados del PAT:', contenidosDelTrimestre);
+      
+      // Convertir al formato esperado por la interfaz
+      return contenidosDelTrimestre.map(contenido => ({
+        titulo: contenido.tema,
+        subtemas: contenido.subtemas
+      }));
+    } catch (error) {
+      console.error('Error cargando contenidos dinámicos:', error);
+      return curriculumData.contenidos;
+    }
+  };
+
+  // Obtener contenidos dinámicos
+  const dynamicContents = getDynamicContents();
+
+  // Actualizar contenidos cuando cambie el trimestre
+  useEffect(() => {
+    if (selectedTrimestre) {
+      console.log('🔄 Actualizando contenidos para trimestre:', selectedTrimestre);
+      // Forzar re-render del componente
+      setCurrentStep(currentStep);
+    }
+  }, [selectedTrimestre]);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -73,10 +126,46 @@ export function PDCConfigForm() {
     const loadReferentialData = async () => {
       setIsLoadingData(true);
       try {
-        // TODO: Cambiar a apiService cuando el backend esté listo
-        const result = await simulationService.getReferentialData(fileId);
+        // Primero intentar cargar datos del PAT guardado en localStorage
+        const savedPATData = localStorage.getItem('patExtractedData');
+        
+        if (savedPATData) {
+          const patData = JSON.parse(savedPATData);
+          console.log('📄 Usando datos del PAT guardado:', patData);
+          
+          // Extraer datos del JSON del PAT con la estructura correcta
+          const datosPersonales = patData.datosPersonales || {};
+          setReferentialData({
+            unidadEducativa: datosPersonales.unidadEducativa || "RAFAEL CAMPOS DE LUJE",
+            distritoEducativo: datosPersonales.distritoEducativo || "POROMA", 
+            departamento: datosPersonales.departamento || "CHUQUISACA",
+            gestion: datosPersonales.gestion || "2025",
+            anioEscolaridad: datosPersonales.anioEscolaridad || "2DO A 6TO DE SECUNDARIA",
+            maestro: datosPersonales.maestro || "PAOLA MONDOCORRE",
+            tituloPSP: datosPersonales.tituloPSP || "EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ"
+          });
+          
+          // Debug: mostrar datos extraídos
+          import('../utils/debugFlow').then(({ debugFlow }) => {
+            debugFlow.showAllStoredData();
+          });
+        } else {
+          // Si no hay datos del PAT, intentar cargar del backend
+          const result = await apiService.getReferentialData(fileId);
         if (result.success && result.data) {
           setReferentialData(result.data);
+          } else {
+            // Usar datos por defecto como último recurso
+            setReferentialData({
+              unidadEducativa: "RAFAEL CAMPOS DE LUIE",
+              distritoEducativo: "POROMA",
+              departamento: "CHUQUISACA",
+              gestion: "2025",
+              anioEscolaridad: "2DO A 6TO DE SECUNDARIA",
+              maestro: "PAOLA MONDOCORRE",
+              tituloPSP: "EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ"
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading referential data:', error);
@@ -99,12 +188,42 @@ export function PDCConfigForm() {
   }, [fileId]);
 
   const handleTrimestreSelect = (trimestre: string) => {
+    console.log('✅ Trimestre seleccionado:', trimestre);
+    
+    // Guardar el trimestre seleccionado en localStorage
+    localStorage.setItem('selectedTrimestre', trimestre);
+    console.log('💾 Trimestre guardado en localStorage:', trimestre);
+    
+    // Debug: mostrar selección
+    import('../utils/debugFlow').then(({ debugFlow }) => {
+      debugFlow.logUserSelections(trimestre);
+    });
+    
+    import('../utils/jsonLogger').then(({ jsonLogger }) => {
+      jsonLogger.logUserSelections(trimestre);
+    });
+    
     setSelectedTrimestre(trimestre);
     form.setValue("trimestre", trimestre);
     setCurrentStep(2);
   };
 
   const handleGradoSelect = (grado: string) => {
+    console.log('✅ Grado seleccionado:', grado);
+    
+    // Guardar el grado seleccionado en localStorage
+    localStorage.setItem('selectedGrado', grado);
+    console.log('💾 Grado guardado en localStorage:', grado);
+    
+    // Debug: mostrar selección
+    import('../utils/debugFlow').then(({ debugFlow }) => {
+      debugFlow.logUserSelections(selectedTrimestre, grado);
+    });
+    
+    import('../utils/jsonLogger').then(({ jsonLogger }) => {
+      jsonLogger.logUserSelections(selectedTrimestre, grado);
+    });
+    
     setSelectedGrado(grado);
     form.setValue("grado", grado);
     setCurrentStep(3);
@@ -112,25 +231,213 @@ export function PDCConfigForm() {
 
   const onSubmit = async (data: FormData) => {
     setIsGenerating(true);
+    setIsDownloading(false);
     
     try {
-      // Preparar datos para enviar al backend
-      const configData: PDCConfigData = {
-        ...data,
-        fileId: fileId, // ID del archivo PAT subido
-      };
-
-      // TODO: Cambiar a apiService cuando el backend esté listo
-      const result = await simulationService.submitPDCConfig(configData);
+      console.log('✅ Formulario enviado con datos:', data);
+      console.log('📝 Contenidos a enseñar seleccionados:', data.contenidosAEnsenar);
       
-      if (result.success && result.pdcId) {
-        setGeneratedPDCId(result.pdcId);
+             // Obtener datos del PAT guardados
+       const patDataForProcessing = localStorage.getItem('patExtractedData');
+       const patData = patDataForProcessing ? JSON.parse(patDataForProcessing) : {};
+      
+      console.log('🔍 === FILTRADO DE DATOS ===');
+      console.log('📅 Trimestre seleccionado:', data.trimestre);
+      console.log('📚 Contenidos seleccionados:', data.contenidosAEnsenar);
+      
+      // 1. FILTRAR POR TRIMESTRE SELECCIONADO
+      const trimestreSeleccionado = data.trimestre;
+      const planCompleto = patData.datosPersonales?.PlanAnualTrimestralizado || [];
+      console.log('📊 Plan completo (todos los trimestres):', planCompleto.length, 'trimestres');
+      
+      const trimestreFiltrado = planCompleto.filter(
+        trimestre => trimestre.trimestre === trimestreSeleccionado
+      );
+      console.log('✅ Trimestre filtrado encontrado:', trimestreFiltrado.length, 'elementos');
+      console.log('📋 Contenidos del trimestre seleccionado:', trimestreFiltrado);
+      
+      // 2. FILTRAR CONTENIDOS SELECCIONADOS DENTRO DEL TRIMESTRE
+      const contenidosSeleccionados = data.contenidosAEnsenar || [];
+      console.log('🎯 Contenidos que el usuario seleccionó:', contenidosSeleccionados);
+      
+             // Crear mapeo dinámico de subtemas a temas basado en los contenidos del PAT
+       const mapeoSubtemasATemas = {};
+       if (patDataForProcessing) {
+         const patDataParsed = JSON.parse(patDataForProcessing);
+         const planCompleto = patDataParsed.datosPersonales?.PlanAnualTrimestralizado || [];
+         const trimestreFiltrado = planCompleto.filter(
+           trimestre => trimestre.trimestre?.toLowerCase().includes(data.trimestre)
+         );
+         
+         if (trimestreFiltrado.length > 0) {
+           const contenidosDelTrimestre = trimestreFiltrado[0]?.contenidos || [];
+           contenidosDelTrimestre.forEach(contenido => {
+             contenido.subtemas.forEach(subtema => {
+               mapeoSubtemasATemas[subtema] = contenido.tema;
+             });
+           });
+         }
+       }
+       
+       console.log('📚 Mapeo dinámico de subtemas a temas:', mapeoSubtemasATemas);
+      
+      // Agrupar subtemas seleccionados por tema
+      const contenidosAgrupados = {};
+      contenidosSeleccionados.forEach(subtema => {
+        const tema = mapeoSubtemasATemas[subtema];
+        if (tema) {
+          if (!contenidosAgrupados[tema]) {
+            contenidosAgrupados[tema] = [];
+          }
+          contenidosAgrupados[tema].push(subtema);
+        }
+      });
+      
+      console.log('📚 Contenidos agrupados por tema:', contenidosAgrupados);
+      
+      // Crear estructura de contenidos con temas y subtemas
+      const contenidosEstructurados = Object.entries(contenidosAgrupados).map(([tema, subtemas]) => ({
+        tema: tema,
+        subtemas: subtemas
+      }));
+      
+      console.log('✅ Contenidos estructurados:', contenidosEstructurados);
+      
+      // Crear el trimestre con contenidos filtrados y estructurados
+      const trimestreConContenidosFiltrados = trimestreFiltrado.map(trimestre => ({
+        ...trimestre,
+        anioEscolaridad: trimestre.anioEscolaridad || "SEGUNDO",
+        contenidos: contenidosEstructurados,
+        campoCienciaTecnologiaYProduccion: trimestre.campoCienciaTecnologiaYProduccion || "MATEMÁTICA.",
+        perfilesSalida: trimestre.perfilesSalida || "Identifica las potencialidades productivas de su región, realizando cálculos y mediciones en procesos productivos y aplica el laboratorio matemático en el fortalecimiento de su pensamiento lógico matemático como una capacidad importante para la trasformación de su realidad.",
+        trimestre: trimestre.trimestre || data.trimestre,
+        actividadesPlanAccionPspPcpyA: trimestre.actividadesPlanAccionPspPcpyA || "Diseñar actividades en el huerto que promuevan la reflexión y el autoconocimiento en los estudiantes, ayudándolos a entender y gestionar sus propias emociones y comportamientos.; Trabajo comunitario en el huerto con elaboración de carteles incluyendo diversos mensajes de paz y respeto.; Producción en los huertos escolares para incentivar el consumo de alimentos naturales."
+      }));
+      
+      console.log('✅ Trimestre con contenidos filtrados y estructurados:');
+      trimestreConContenidosFiltrados.forEach((trimestre, index) => {
+        console.log(`   Trimestre ${index + 1}:`, trimestre.contenidos.length, 'temas con subtemas seleccionados');
+        console.log(`   - Año escolaridad: ${trimestre.anioEscolaridad}`);
+        console.log(`   - Campo ciencia: ${trimestre.campoCienciaTecnologiaYProduccion}`);
+        console.log(`   - Perfiles salida: ${trimestre.perfilesSalida}`);
+        console.log(`   - Trimestre: ${trimestre.trimestre}`);
+        console.log(`   - Actividades PSP: ${trimestre.actividadesPlanAccionPspPcpyA}`);
+        trimestre.contenidos.forEach(contenido => {
+          console.log(`     - Tema: ${contenido.tema}`);
+          console.log(`       Subtemas: ${contenido.subtemas.join(', ')}`);
+        });
+      });
+      
+      // Preparar datos completos usando la estructura EXACTA del backend
+      const completeDataForGeneration = {
+        // Solo datosPersonales como solicitaste
+        datosPersonales: {
+          // Datos personales del PAT con valores por defecto completos
+          objetivoHolisticoDeNivel: patData.datosPersonales?.objetivoHolisticoDeNivel || "Formamos integralmente a las y los estudiantes con identidad cultural, valores sociocomunitarios, espiritualidad y consciencia crítica, articulando la educación científica, humanística, técnica, tecnológica y artística a través de procesos productivos de acuerdo a las vocaciones y potencialidades de las regiones en el marco de la descolonización, interculturalidad, y plurilingüismo, para que contribuyan a la conservación, protección de la Madre Tierra y salud comunitaria, la construcción de una sociedad democrática, inclusiva y libre de violencia.",
+          unidadEducativa: patData.datosPersonales?.unidadEducativa || "RAFAEL CAMPOS DE LUJE",
+          maestro: patData.datosPersonales?.maestro || "PAOLA MONDOCORRE",
+          tituloPSP: patData.datosPersonales?.tituloPSP || "EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ",
+          anioEscolaridad: patData.datosPersonales?.anioEscolaridad || "2DO A 6TO DE SECUNDARIA",
+          departamento: patData.datosPersonales?.departamento || "CHUQUISACA",
+          gestion: patData.datosPersonales?.gestion || "2025",
+          distritoEducativo: patData.datosPersonales?.distritoEducativo || "POROMA",
+          mes: data.mes || "diciembre", // Mover mes aquí como solicitaste
+          
+          // SOLO EL TRIMESTRE SELECCIONADO CON SUS CONTENIDOS FILTRADOS
+          PlanAnualTrimestralizado: trimestreConContenidosFiltrados
+        }
+      };
+      
+      // Guardar datos de orientaciones en localStorage pero NO enviarlos al backend
+      const datosOrientaciones = {
+        recursos: data.recursos || "",
+        orientacionesPractica: data.orientacionesPractica || "",
+        orientacionesTeoria: data.orientacionesTeoria || "",
+        orientacionesValoracion: data.orientacionesValoracion || "",
+        orientacionesProduccion: data.orientacionesProduccion || ""
+      };
+      
+      localStorage.setItem('orientacionesMetodologicas', JSON.stringify(datosOrientaciones));
+      console.log('💾 Datos de orientaciones guardados en localStorage (NO se envían al backend)');
+      
+      // Debug: mostrar datos completos
+      console.log('🔍 === VERIFICACIÓN DE CAMPOS COMPLETOS ===');
+      console.log('✅ Objetivo holístico:', completeDataForGeneration.datosPersonales.objetivoHolisticoDeNivel ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Unidad educativa:', completeDataForGeneration.datosPersonales.unidadEducativa ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Maestro:', completeDataForGeneration.datosPersonales.maestro ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Título PSP:', completeDataForGeneration.datosPersonales.tituloPSP ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Año escolaridad:', completeDataForGeneration.datosPersonales.anioEscolaridad ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Departamento:', completeDataForGeneration.datosPersonales.departamento ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Gestión:', completeDataForGeneration.datosPersonales.gestion ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Distrito educativo:', completeDataForGeneration.datosPersonales.distritoEducativo ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Mes:', completeDataForGeneration.datosPersonales.mes ? 'COMPLETO' : 'FALTANTE');
+      
+      import('../utils/debugFlow').then(({ debugFlow }) => {
+        debugFlow.logCompleteDataForGeneration(completeDataForGeneration);
+      });
+      
+      import('../utils/jsonLogger').then(({ jsonLogger }) => {
+        jsonLogger.logFinalJSON(completeDataForGeneration);
+      });
+      
+      // Mostrar en consola lo que se va a enviar
+      console.log('🚀 === DATOS PARA GENERAR PDC (ESTRUCTURA CORRECTA) ===');
+      console.log('📊 JSON completo que se enviará:');
+      console.log(JSON.stringify(completeDataForGeneration, null, 2));
+      console.log('📝 Resumen de datos:');
+      console.log('- Mes:', completeDataForGeneration.datosPersonales.mes);
+      console.log('- Título PSP:', completeDataForGeneration.datosPersonales.tituloPSP);
+      console.log('- Plan Trimestralizado:', completeDataForGeneration.datosPersonales.PlanAnualTrimestralizado.length, 'trimestres');
+      console.log('- Contenidos seleccionados:', contenidosSeleccionados.length, 'subtemas');
+      
+      // Guardar todos los datos del PDC en localStorage como JSON
+      localStorage.setItem('pdcCompleteData', JSON.stringify(completeDataForGeneration));
+      console.log('💾 Datos completos guardados en localStorage como "pdcCompleteData"');
+
+      // ✅ CORREGIDO: Enviar completeDataForGeneration en lugar de configData
+      console.log('📤 === ENVIANDO DATOS AL BACKEND ===');
+      console.log('✅ Enviando completeDataForGeneration (CORRECTO)');
+      console.log('📊 Datos que se envían:', completeDataForGeneration);
+      
+      const result = await apiService.submitPDCConfig(completeDataForGeneration);
+      
+      if (result.success) {
+        // Verificar si se descargó un archivo
+        if (result.downloadedFile) {
+          console.log('✅ Archivo descargado exitosamente:', result.downloadedFile);
+          setIsDownloading(true);
+          // Pequeño delay para mostrar el estado de descarga
+          setTimeout(() => {
+            setIsDownloading(false);
+            setNotification({
+              type: 'success',
+              message: 'PDC generado exitosamente',
+              filename: result.downloadedFile
+            });
+            // Limpiar notificación después de 5 segundos
+            setTimeout(() => setNotification(null), 5000);
+          }, 1000);
+        } else if (result.pdcId) {
+          // Si no se descargó archivo pero hay pdcId, mostrar vista previa
+          setGeneratedPDCId(result.pdcId);
+        } else {
+          // Solo mensaje de éxito
+          setNotification({
+            type: 'success',
+            message: result.message || "PDC generado exitosamente"
+          });
+          setTimeout(() => setNotification(null), 5000);
+        }
       } else {
         throw new Error(result.error || "Error al generar el PDC");
       }
     } catch (error) {
       console.error('Error generating PDC:', error);
-      alert(error instanceof Error ? error.message : "Error al generar el PDC");
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : "Error al generar el PDC"
+      });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsGenerating(false);
     }
@@ -357,9 +664,9 @@ export function PDCConfigForm() {
                     <BookOpen className="h-5 w-5" />
                     <span>Contenidos a enseñar</span>
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    Área: {curriculumData.area} - {selectedTrimestre} trimestre
-                  </CardDescription>
+                                     <CardDescription className="text-sm text-muted-foreground">
+                     Área: Matemática - {selectedTrimestre} trimestre
+                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -368,7 +675,7 @@ export function PDCConfigForm() {
                     render={() => (
                       <FormItem>
                         <div className="space-y-4">
-                          {curriculumData.contenidos.map((contenido, contenidoIndex) => (
+                          {dynamicContents.map((contenido, contenidoIndex) => (
                             <div key={contenidoIndex} className="space-y-3">
                               <h4 className="font-medium text-sm text-foreground bg-blue-50 px-3 py-2 rounded border">
                                 {contenido.titulo}
@@ -645,7 +952,7 @@ export function PDCConfigForm() {
             <Button 
               type="submit" 
               size="lg"
-              disabled={isGenerating}
+              disabled={isGenerating || isDownloading}
               className="min-w-64 text-lg py-6 bg-primary hover:bg-primary/90"
             >
               {isGenerating ? (
@@ -653,14 +960,56 @@ export function PDCConfigForm() {
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                   Generando PDC...
                 </>
+              ) : isDownloading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Descargando archivo...
+                </>
               ) : (
                 <>
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  Generar mi PDC
+                  Generar y Descargar PDC
                 </>
               )}
             </Button>
           </div>
+
+          {/* Notificación de éxito/error */}
+          {notification && (
+            <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
+              notification.type === 'success' 
+                ? 'bg-green-50 border border-green-200 text-green-800' 
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  {notification.type === 'success' ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <div className="h-5 w-5 text-red-600">⚠️</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium">
+                    {notification.type === 'success' ? '¡Éxito!' : 'Error'}
+                  </h4>
+                  <p className="text-sm mt-1">{notification.message}</p>
+                  {notification.filename && (
+                    <div className="mt-2 flex items-center space-x-2 text-xs">
+                      <Download className="h-3 w-3" />
+                      <span>Archivo descargado: {notification.filename}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setNotification(null)}
+                  className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       </Form>
     </div>

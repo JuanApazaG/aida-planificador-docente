@@ -19,11 +19,11 @@ import { simulationService, apiService, PDCPreviewResponse } from "@/config/back
 interface PDCPreviewProps {
   pdcId: string;
   onBack?: () => void;
-  onSaveToResources?: (pdcData: any) => void;
+  onSaveToResources?: (pdcData: PDCPreviewResponse['pdcData']) => void;
 }
 
 export function PDCPreview({ pdcId, onBack, onSaveToResources }: PDCPreviewProps) {
-  const [pdcData, setPdcData] = useState<any>(null);
+  const [pdcData, setPdcData] = useState<PDCPreviewResponse['pdcData']>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -39,7 +39,7 @@ export function PDCPreview({ pdcId, onBack, onSaveToResources }: PDCPreviewProps
     
     try {
       // TODO: Cambiar a apiService cuando el backend esté listo
-      const result = await simulationService.getPDCPreview(pdcId);
+      const result = await apiService.getPDCPreview(pdcId);
       if (result.success && result.pdcData) {
         setPdcData(result.pdcData);
       } else {

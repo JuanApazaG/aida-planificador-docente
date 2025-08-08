@@ -1,0 +1,58 @@
+{
+  "datosPersonales": {
+    "objetivoHolisticoDeNivel": "Formamos integralmente a las y los estudiantes con identidad cultural, valores sociocomunitarios, espiritualidad y consciencia crítica, articulando la educación científica, humanística, técnica, tecnológica y artística a través de procesos productivos de acuerdo a las vocaciones y potencialidades de las regiones en el marco de la descolonización, interculturalidad, y plurilingüismo, para que contribuyan a la conservación, protección de la Madre Tierra y salud comunitaria, la construcción de una sociedad democrática, inclusiva y libre de violencia.",
+    "unidadEducativa": "RAFAEL CAMPOS DE LUJE",
+    "maestro": "PAOLA MONDOCORRE",
+    "tituloPSP": ""EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ"",
+    "anioEscolaridad": "2DO A 6TO DE SECUNDARIA",
+    "departamento": "CHUQUISACA",
+    "gestion": "2025",
+    "distritoEducativo": "POROMA",
+    "mes": "diciembre",
+    "PlanAnualTrimestralizado": [
+      {
+        "anioEscolaridad": "SEGUNDO",
+        "contenidos": [
+          {
+            "tema": "EL ÁLGEBRA Y SU RELACIÓN CON LAS ACTIVIDADES DE LA VIDA COTIDIANA",
+            "subtemas": [
+              "Nociones básicas de álgebra",
+              "Expresiones algebraicas y la modelización",
+              "Estudio de Variables y Constantes",
+              "Término algebraico",
+              "Términos semejantes, reducción y su aplicación",
+              "Clasificación de expresiones algebraicas",
+              "Grado relativo y absoluto de un monomio y un polinomio",
+              "Valor numérico"
+            ]
+          },
+          {
+            "tema": "OPERACIONES CON EXPRESIONES ALGEBRAICAS EN EL DESARROLLO DE LA CIENCIA Y LA TECNOLOGÍA",
+            "subtemas": [
+              "Clasificación de expresiones algebraicas y su notación",
+              "Operaciones con expresiones algebraicas",
+              "Adición y sustracción",
+              "Multiplicación",
+              "División",
+              "Método clásico"
+            ]
+          },
+          {
+            "tema": "ECUACIONES DE PRIMER GRADO EN LA COMUNIDAD",
+            "subtemas": [
+              "Definición de igualdad, identidad y ecuación",
+              "Definición de ecuaciones de primer grado y su lenguaje matemático",
+              "Elementos de una ecuación",
+              "Resolución de ecuaciones",
+              "Aplicación de ecuaciones en la resolución de problemas aplicados al contexto y la tecnología"
+            ]
+          }
+        ],
+        "campoCienciaTecnologiaYProduccion": "MATEMÁTICA.",
+        "perfilesSalida": "Identifica las potencialidades productivas de su región, realizando cálculos y mediciones en procesos productivos y aplica el laboratorio matemático en el fortalecimiento de su pensamiento lógico matemático como una capacidad importante para la trasformación de su realidad.",
+        "trimestre": "SEGUNDO",
+        "actividadesPlanAccionPspPcpyA": "Diseñar actividades en el huerto que promuevan la reflexión y el autoconocimiento en los estudiantes, ayudándolos a entender y gestionar sus propias emociones y comportamientos.; Trabajo comunitario en el huerto con elaboración de carteles incluyendo diversos mensajes de paz y respeto.; Producción en los huertos escolares para incentivar el consumo de alimentos naturales."
+      }
+    ]
+  }
+}

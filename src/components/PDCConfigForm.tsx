@@ -56,6 +56,57 @@ export function PDCConfigForm() {
   const [fileId, setFileId] = useState<string>("mock-file-id"); // TODO: Obtener del contexto o props
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string; filename?: string } | null>(null);
 
+  // ===== FUNCIÓN PARA OBTENER CONTENIDOS DINÁMICOS DEL PAT =====
+  const getDynamicContents = () => {
+    try {
+      const savedPATData = localStorage.getItem('patExtractedData');
+      if (!savedPATData) {
+        console.log('⚠️ No hay datos del PAT guardados, usando contenidos estáticos');
+        return curriculumData.contenidos;
+      }
+
+      const patData = JSON.parse(savedPATData);
+      const planCompleto = patData.datosPersonales?.PlanAnualTrimestralizado || [];
+      
+      // Filtrar por trimestre seleccionado
+      const trimestreSeleccionado = selectedTrimestre;
+      const trimestreFiltrado = planCompleto.filter(
+        trimestre => trimestre.trimestre?.toLowerCase().includes(trimestreSeleccionado)
+      );
+
+      if (trimestreFiltrado.length === 0) {
+        console.log('⚠️ No se encontraron contenidos para el trimestre seleccionado, usando contenidos estáticos');
+        return curriculumData.contenidos;
+      }
+
+      // Extraer contenidos del trimestre filtrado
+      const contenidosDelTrimestre = trimestreFiltrado[0]?.contenidos || [];
+      
+      console.log('✅ Contenidos dinámicos cargados del PAT:', contenidosDelTrimestre);
+      
+      // Convertir al formato esperado por la interfaz
+      return contenidosDelTrimestre.map(contenido => ({
+        titulo: contenido.tema,
+        subtemas: contenido.subtemas
+      }));
+    } catch (error) {
+      console.error('Error cargando contenidos dinámicos:', error);
+      return curriculumData.contenidos;
+    }
+  };
+
+  // Obtener contenidos dinámicos
+  const dynamicContents = getDynamicContents();
+
+  // Actualizar contenidos cuando cambie el trimestre
+  useEffect(() => {
+    if (selectedTrimestre) {
+      console.log('🔄 Actualizando contenidos para trimestre:', selectedTrimestre);
+      // Forzar re-render del componente
+      setCurrentStep(currentStep);
+    }
+  }, [selectedTrimestre]);
+
   const form = useForm<FormData>({
     defaultValues: {
       trimestre: "",
@@ -186,9 +237,9 @@ export function PDCConfigForm() {
       console.log('✅ Formulario enviado con datos:', data);
       console.log('📝 Contenidos a enseñar seleccionados:', data.contenidosAEnsenar);
       
-      // Obtener datos del PAT guardados
-      const savedPATData = localStorage.getItem('patExtractedData');
-      const patData = savedPATData ? JSON.parse(savedPATData) : {};
+             // Obtener datos del PAT guardados
+       const patDataForProcessing = localStorage.getItem('patExtractedData');
+       const patData = patDataForProcessing ? JSON.parse(patDataForProcessing) : {};
       
       console.log('🔍 === FILTRADO DE DATOS ===');
       console.log('📅 Trimestre seleccionado:', data.trimestre);
@@ -209,24 +260,26 @@ export function PDCConfigForm() {
       const contenidosSeleccionados = data.contenidosAEnsenar || [];
       console.log('🎯 Contenidos que el usuario seleccionó:', contenidosSeleccionados);
       
-      // Mapeo de subtemas a temas para agrupar correctamente
-      const mapeoSubtemasATemas = {
-        // Subtemas del tema "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología"
-        "Clasificación de expresiones algebraicas y su notación": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        "Operaciones con expresiones algebraicas: adición y sustracción": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        "Operaciones con expresiones algebraicas: multiplicación": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        "Operaciones con expresiones algebraicas: división (método clásico, método de Horner, método de divisiones sucesivas - Ruffini)": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        "Teorema del resto": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        "Operaciones algebraicas combinadas": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        "Problemas aplicados al contexto y la tecnología": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
-        
-        // Subtemas del tema "Ecuaciones de primer grado en la comunidad"
-        "Definición de igualdad, identidad y ecuación": "Ecuaciones de primer grado en la comunidad",
-        "Definición de ecuaciones de primer grado y su lenguaje matemático": "Ecuaciones de primer grado en la comunidad",
-        "Elementos de una ecuación": "Ecuaciones de primer grado en la comunidad",
-        "Resolución de ecuaciones": "Ecuaciones de primer grado en la comunidad",
-        "Aplicación de ecuaciones en la resolución de problemas aplicados al contexto y la tecnología": "Ecuaciones de primer grado en la comunidad"
-      };
+             // Crear mapeo dinámico de subtemas a temas basado en los contenidos del PAT
+       const mapeoSubtemasATemas = {};
+       if (patDataForProcessing) {
+         const patDataParsed = JSON.parse(patDataForProcessing);
+         const planCompleto = patDataParsed.datosPersonales?.PlanAnualTrimestralizado || [];
+         const trimestreFiltrado = planCompleto.filter(
+           trimestre => trimestre.trimestre?.toLowerCase().includes(data.trimestre)
+         );
+         
+         if (trimestreFiltrado.length > 0) {
+           const contenidosDelTrimestre = trimestreFiltrado[0]?.contenidos || [];
+           contenidosDelTrimestre.forEach(contenido => {
+             contenido.subtemas.forEach(subtema => {
+               mapeoSubtemasATemas[subtema] = contenido.tema;
+             });
+           });
+         }
+       }
+       
+       console.log('📚 Mapeo dinámico de subtemas a temas:', mapeoSubtemasATemas);
       
       // Agrupar subtemas seleccionados por tema
       const contenidosAgrupados = {};
@@ -253,13 +306,22 @@ export function PDCConfigForm() {
       // Crear el trimestre con contenidos filtrados y estructurados
       const trimestreConContenidosFiltrados = trimestreFiltrado.map(trimestre => ({
         ...trimestre,
-        anioEscolaridad: "SEGUNDO", // Cambiar gradoSeleccionado por anioEscolaridad
-        contenidos: contenidosEstructurados
+        anioEscolaridad: trimestre.anioEscolaridad || "SEGUNDO",
+        contenidos: contenidosEstructurados,
+        campoCienciaTecnologiaYProduccion: trimestre.campoCienciaTecnologiaYProduccion || "MATEMÁTICA.",
+        perfilesSalida: trimestre.perfilesSalida || "Identifica las potencialidades productivas de su región, realizando cálculos y mediciones en procesos productivos y aplica el laboratorio matemático en el fortalecimiento de su pensamiento lógico matemático como una capacidad importante para la trasformación de su realidad.",
+        trimestre: trimestre.trimestre || data.trimestre,
+        actividadesPlanAccionPspPcpyA: trimestre.actividadesPlanAccionPspPcpyA || "Diseñar actividades en el huerto que promuevan la reflexión y el autoconocimiento en los estudiantes, ayudándolos a entender y gestionar sus propias emociones y comportamientos.; Trabajo comunitario en el huerto con elaboración de carteles incluyendo diversos mensajes de paz y respeto.; Producción en los huertos escolares para incentivar el consumo de alimentos naturales."
       }));
       
       console.log('✅ Trimestre con contenidos filtrados y estructurados:');
       trimestreConContenidosFiltrados.forEach((trimestre, index) => {
         console.log(`   Trimestre ${index + 1}:`, trimestre.contenidos.length, 'temas con subtemas seleccionados');
+        console.log(`   - Año escolaridad: ${trimestre.anioEscolaridad}`);
+        console.log(`   - Campo ciencia: ${trimestre.campoCienciaTecnologiaYProduccion}`);
+        console.log(`   - Perfiles salida: ${trimestre.perfilesSalida}`);
+        console.log(`   - Trimestre: ${trimestre.trimestre}`);
+        console.log(`   - Actividades PSP: ${trimestre.actividadesPlanAccionPspPcpyA}`);
         trimestre.contenidos.forEach(contenido => {
           console.log(`     - Tema: ${contenido.tema}`);
           console.log(`       Subtemas: ${contenido.subtemas.join(', ')}`);
@@ -270,16 +332,16 @@ export function PDCConfigForm() {
       const completeDataForGeneration = {
         // Solo datosPersonales como solicitaste
         datosPersonales: {
-          // Datos personales del PAT
-          objetivoHolisticoDeNivel: patData.datosPersonales?.objetivoHolisticoDeNivel || "",
-          unidadEducativa: patData.datosPersonales?.unidadEducativa || "",
-          maestro: patData.datosPersonales?.maestro || "",
-          tituloPSP: patData.datosPersonales?.tituloPSP || "",
-          anioEscolaridad: patData.datosPersonales?.anioEscolaridad || "",
-          departamento: patData.datosPersonales?.departamento || "",
-          gestion: patData.datosPersonales?.gestion || "",
-          distritoEducativo: patData.datosPersonales?.distritoEducativo || "",
-          mes: data.mes || "", // Mover mes aquí como solicitaste
+          // Datos personales del PAT con valores por defecto completos
+          objetivoHolisticoDeNivel: patData.datosPersonales?.objetivoHolisticoDeNivel || "Formamos integralmente a las y los estudiantes con identidad cultural, valores sociocomunitarios, espiritualidad y consciencia crítica, articulando la educación científica, humanística, técnica, tecnológica y artística a través de procesos productivos de acuerdo a las vocaciones y potencialidades de las regiones en el marco de la descolonización, interculturalidad, y plurilingüismo, para que contribuyan a la conservación, protección de la Madre Tierra y salud comunitaria, la construcción de una sociedad democrática, inclusiva y libre de violencia.",
+          unidadEducativa: patData.datosPersonales?.unidadEducativa || "RAFAEL CAMPOS DE LUJE",
+          maestro: patData.datosPersonales?.maestro || "PAOLA MONDOCORRE",
+          tituloPSP: patData.datosPersonales?.tituloPSP || "EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ",
+          anioEscolaridad: patData.datosPersonales?.anioEscolaridad || "2DO A 6TO DE SECUNDARIA",
+          departamento: patData.datosPersonales?.departamento || "CHUQUISACA",
+          gestion: patData.datosPersonales?.gestion || "2025",
+          distritoEducativo: patData.datosPersonales?.distritoEducativo || "POROMA",
+          mes: data.mes || "diciembre", // Mover mes aquí como solicitaste
           
           // SOLO EL TRIMESTRE SELECCIONADO CON SUS CONTENIDOS FILTRADOS
           PlanAnualTrimestralizado: trimestreConContenidosFiltrados
@@ -299,6 +361,17 @@ export function PDCConfigForm() {
       console.log('💾 Datos de orientaciones guardados en localStorage (NO se envían al backend)');
       
       // Debug: mostrar datos completos
+      console.log('🔍 === VERIFICACIÓN DE CAMPOS COMPLETOS ===');
+      console.log('✅ Objetivo holístico:', completeDataForGeneration.datosPersonales.objetivoHolisticoDeNivel ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Unidad educativa:', completeDataForGeneration.datosPersonales.unidadEducativa ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Maestro:', completeDataForGeneration.datosPersonales.maestro ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Título PSP:', completeDataForGeneration.datosPersonales.tituloPSP ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Año escolaridad:', completeDataForGeneration.datosPersonales.anioEscolaridad ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Departamento:', completeDataForGeneration.datosPersonales.departamento ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Gestión:', completeDataForGeneration.datosPersonales.gestion ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Distrito educativo:', completeDataForGeneration.datosPersonales.distritoEducativo ? 'COMPLETO' : 'FALTANTE');
+      console.log('✅ Mes:', completeDataForGeneration.datosPersonales.mes ? 'COMPLETO' : 'FALTANTE');
+      
       import('../utils/debugFlow').then(({ debugFlow }) => {
         debugFlow.logCompleteDataForGeneration(completeDataForGeneration);
       });
@@ -591,9 +664,9 @@ export function PDCConfigForm() {
                     <BookOpen className="h-5 w-5" />
                     <span>Contenidos a enseñar</span>
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    Área: {curriculumData.area} - {selectedTrimestre} trimestre
-                  </CardDescription>
+                                     <CardDescription className="text-sm text-muted-foreground">
+                     Área: Matemática - {selectedTrimestre} trimestre
+                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -602,7 +675,7 @@ export function PDCConfigForm() {
                     render={() => (
                       <FormItem>
                         <div className="space-y-4">
-                          {curriculumData.contenidos.map((contenido, contenidoIndex) => (
+                          {dynamicContents.map((contenido, contenidoIndex) => (
                             <div key={contenidoIndex} className="space-y-3">
                               <h4 className="font-medium text-sm text-foreground bg-blue-50 px-3 py-2 rounded border">
                                 {contenido.titulo}

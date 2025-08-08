@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import pdcMockup from "@/assets/pdc-mockup.jpg";
+import pdcMockup from "@/assets/maria.png";
 
 const Hero = () => {
   const navigate = useNavigate();

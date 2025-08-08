@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import logoAida from "@/assets/logo_aida.png";
+import { FileText } from "lucide-react";
 
 const Header = () => {
   const [activeButton, setActiveButton] = useState<string | null>(null);
@@ -65,7 +66,17 @@ const Header = () => {
           </nav>
 
           {/* CTA Button */}
-          <div className="relative">
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2"
+              onClick={() => window.location.href = '/json-viewer'}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Ver JSONs</span>
+            </Button>
+            
             <Button 
               className="relative bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground px-8 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 group overflow-hidden"
               onClick={handleCTAClick}

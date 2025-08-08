@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { curriculumData, grados } from "@/data/curriculum";
-import { ChevronRight, BookOpen, CheckCircle, ArrowLeft, Users, Info, FileText, Calendar, Target, Settings } from "lucide-react";
+import { ChevronRight, BookOpen, CheckCircle, ArrowLeft, Users, Info, FileText, Calendar, Target, Settings, Download } from "lucide-react";
 import { simulationService, apiService, ReferentialDataResponse, PDCConfigData } from "@/config/backend";
 import { PDCPreview } from "./PDCPreview";
 
@@ -49,10 +49,12 @@ export function PDCConfigForm() {
   const [selectedTrimestre, setSelectedTrimestre] = useState<string>("");
   const [selectedGrado, setSelectedGrado] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [referentialData, setReferentialData] = useState<ReferentialData | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [generatedPDCId, setGeneratedPDCId] = useState<string | null>(null);
   const [fileId, setFileId] = useState<string>("mock-file-id"); // TODO: Obtener del contexto o props
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string; filename?: string } | null>(null);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -73,10 +75,46 @@ export function PDCConfigForm() {
     const loadReferentialData = async () => {
       setIsLoadingData(true);
       try {
-        // TODO: Cambiar a apiService cuando el backend esté listo
-        const result = await simulationService.getReferentialData(fileId);
+        // Primero intentar cargar datos del PAT guardado en localStorage
+        const savedPATData = localStorage.getItem('patExtractedData');
+        
+        if (savedPATData) {
+          const patData = JSON.parse(savedPATData);
+          console.log('📄 Usando datos del PAT guardado:', patData);
+          
+          // Extraer datos del JSON del PAT con la estructura correcta
+          const datosPersonales = patData.datosPersonales || {};
+          setReferentialData({
+            unidadEducativa: datosPersonales.unidadEducativa || "RAFAEL CAMPOS DE LUJE",
+            distritoEducativo: datosPersonales.distritoEducativo || "POROMA", 
+            departamento: datosPersonales.departamento || "CHUQUISACA",
+            gestion: datosPersonales.gestion || "2025",
+            anioEscolaridad: datosPersonales.anioEscolaridad || "2DO A 6TO DE SECUNDARIA",
+            maestro: datosPersonales.maestro || "PAOLA MONDOCORRE",
+            tituloPSP: datosPersonales.tituloPSP || "EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ"
+          });
+          
+          // Debug: mostrar datos extraídos
+          import('../utils/debugFlow').then(({ debugFlow }) => {
+            debugFlow.showAllStoredData();
+          });
+        } else {
+          // Si no hay datos del PAT, intentar cargar del backend
+          const result = await apiService.getReferentialData(fileId);
         if (result.success && result.data) {
           setReferentialData(result.data);
+          } else {
+            // Usar datos por defecto como último recurso
+            setReferentialData({
+              unidadEducativa: "RAFAEL CAMPOS DE LUIE",
+              distritoEducativo: "POROMA",
+              departamento: "CHUQUISACA",
+              gestion: "2025",
+              anioEscolaridad: "2DO A 6TO DE SECUNDARIA",
+              maestro: "PAOLA MONDOCORRE",
+              tituloPSP: "EL HUERTO ESCOLAR UN ESPACIO PARA CONSTRUIR PAZ"
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading referential data:', error);
@@ -99,12 +137,42 @@ export function PDCConfigForm() {
   }, [fileId]);
 
   const handleTrimestreSelect = (trimestre: string) => {
+    console.log('✅ Trimestre seleccionado:', trimestre);
+    
+    // Guardar el trimestre seleccionado en localStorage
+    localStorage.setItem('selectedTrimestre', trimestre);
+    console.log('💾 Trimestre guardado en localStorage:', trimestre);
+    
+    // Debug: mostrar selección
+    import('../utils/debugFlow').then(({ debugFlow }) => {
+      debugFlow.logUserSelections(trimestre);
+    });
+    
+    import('../utils/jsonLogger').then(({ jsonLogger }) => {
+      jsonLogger.logUserSelections(trimestre);
+    });
+    
     setSelectedTrimestre(trimestre);
     form.setValue("trimestre", trimestre);
     setCurrentStep(2);
   };
 
   const handleGradoSelect = (grado: string) => {
+    console.log('✅ Grado seleccionado:', grado);
+    
+    // Guardar el grado seleccionado en localStorage
+    localStorage.setItem('selectedGrado', grado);
+    console.log('💾 Grado guardado en localStorage:', grado);
+    
+    // Debug: mostrar selección
+    import('../utils/debugFlow').then(({ debugFlow }) => {
+      debugFlow.logUserSelections(selectedTrimestre, grado);
+    });
+    
+    import('../utils/jsonLogger').then(({ jsonLogger }) => {
+      jsonLogger.logUserSelections(selectedTrimestre, grado);
+    });
+    
     setSelectedGrado(grado);
     form.setValue("grado", grado);
     setCurrentStep(3);
@@ -112,25 +180,191 @@ export function PDCConfigForm() {
 
   const onSubmit = async (data: FormData) => {
     setIsGenerating(true);
+    setIsDownloading(false);
     
     try {
-      // Preparar datos para enviar al backend
-      const configData: PDCConfigData = {
-        ...data,
-        fileId: fileId, // ID del archivo PAT subido
-      };
-
-      // TODO: Cambiar a apiService cuando el backend esté listo
-      const result = await simulationService.submitPDCConfig(configData);
+      console.log('✅ Formulario enviado con datos:', data);
+      console.log('📝 Contenidos a enseñar seleccionados:', data.contenidosAEnsenar);
       
-      if (result.success && result.pdcId) {
-        setGeneratedPDCId(result.pdcId);
+      // Obtener datos del PAT guardados
+      const savedPATData = localStorage.getItem('patExtractedData');
+      const patData = savedPATData ? JSON.parse(savedPATData) : {};
+      
+      console.log('🔍 === FILTRADO DE DATOS ===');
+      console.log('📅 Trimestre seleccionado:', data.trimestre);
+      console.log('📚 Contenidos seleccionados:', data.contenidosAEnsenar);
+      
+      // 1. FILTRAR POR TRIMESTRE SELECCIONADO
+      const trimestreSeleccionado = data.trimestre;
+      const planCompleto = patData.datosPersonales?.PlanAnualTrimestralizado || [];
+      console.log('📊 Plan completo (todos los trimestres):', planCompleto.length, 'trimestres');
+      
+      const trimestreFiltrado = planCompleto.filter(
+        trimestre => trimestre.trimestre === trimestreSeleccionado
+      );
+      console.log('✅ Trimestre filtrado encontrado:', trimestreFiltrado.length, 'elementos');
+      console.log('📋 Contenidos del trimestre seleccionado:', trimestreFiltrado);
+      
+      // 2. FILTRAR CONTENIDOS SELECCIONADOS DENTRO DEL TRIMESTRE
+      const contenidosSeleccionados = data.contenidosAEnsenar || [];
+      console.log('🎯 Contenidos que el usuario seleccionó:', contenidosSeleccionados);
+      
+      // Mapeo de subtemas a temas para agrupar correctamente
+      const mapeoSubtemasATemas = {
+        // Subtemas del tema "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología"
+        "Clasificación de expresiones algebraicas y su notación": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        "Operaciones con expresiones algebraicas: adición y sustracción": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        "Operaciones con expresiones algebraicas: multiplicación": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        "Operaciones con expresiones algebraicas: división (método clásico, método de Horner, método de divisiones sucesivas - Ruffini)": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        "Teorema del resto": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        "Operaciones algebraicas combinadas": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        "Problemas aplicados al contexto y la tecnología": "Operaciones con expresiones algebraicas en el desarrollo de la ciencia y la tecnología",
+        
+        // Subtemas del tema "Ecuaciones de primer grado en la comunidad"
+        "Definición de igualdad, identidad y ecuación": "Ecuaciones de primer grado en la comunidad",
+        "Definición de ecuaciones de primer grado y su lenguaje matemático": "Ecuaciones de primer grado en la comunidad",
+        "Elementos de una ecuación": "Ecuaciones de primer grado en la comunidad",
+        "Resolución de ecuaciones": "Ecuaciones de primer grado en la comunidad",
+        "Aplicación de ecuaciones en la resolución de problemas aplicados al contexto y la tecnología": "Ecuaciones de primer grado en la comunidad"
+      };
+      
+      // Agrupar subtemas seleccionados por tema
+      const contenidosAgrupados = {};
+      contenidosSeleccionados.forEach(subtema => {
+        const tema = mapeoSubtemasATemas[subtema];
+        if (tema) {
+          if (!contenidosAgrupados[tema]) {
+            contenidosAgrupados[tema] = [];
+          }
+          contenidosAgrupados[tema].push(subtema);
+        }
+      });
+      
+      console.log('📚 Contenidos agrupados por tema:', contenidosAgrupados);
+      
+      // Crear estructura de contenidos con temas y subtemas
+      const contenidosEstructurados = Object.entries(contenidosAgrupados).map(([tema, subtemas]) => ({
+        tema: tema,
+        subtemas: subtemas
+      }));
+      
+      console.log('✅ Contenidos estructurados:', contenidosEstructurados);
+      
+      // Crear el trimestre con contenidos filtrados y estructurados
+      const trimestreConContenidosFiltrados = trimestreFiltrado.map(trimestre => ({
+        ...trimestre,
+        anioEscolaridad: "SEGUNDO", // Cambiar gradoSeleccionado por anioEscolaridad
+        contenidos: contenidosEstructurados
+      }));
+      
+      console.log('✅ Trimestre con contenidos filtrados y estructurados:');
+      trimestreConContenidosFiltrados.forEach((trimestre, index) => {
+        console.log(`   Trimestre ${index + 1}:`, trimestre.contenidos.length, 'temas con subtemas seleccionados');
+        trimestre.contenidos.forEach(contenido => {
+          console.log(`     - Tema: ${contenido.tema}`);
+          console.log(`       Subtemas: ${contenido.subtemas.join(', ')}`);
+        });
+      });
+      
+      // Preparar datos completos usando la estructura EXACTA del backend
+      const completeDataForGeneration = {
+        // Solo datosPersonales como solicitaste
+        datosPersonales: {
+          // Datos personales del PAT
+          objetivoHolisticoDeNivel: patData.datosPersonales?.objetivoHolisticoDeNivel || "",
+          unidadEducativa: patData.datosPersonales?.unidadEducativa || "",
+          maestro: patData.datosPersonales?.maestro || "",
+          tituloPSP: patData.datosPersonales?.tituloPSP || "",
+          anioEscolaridad: patData.datosPersonales?.anioEscolaridad || "",
+          departamento: patData.datosPersonales?.departamento || "",
+          gestion: patData.datosPersonales?.gestion || "",
+          distritoEducativo: patData.datosPersonales?.distritoEducativo || "",
+          mes: data.mes || "", // Mover mes aquí como solicitaste
+          
+          // SOLO EL TRIMESTRE SELECCIONADO CON SUS CONTENIDOS FILTRADOS
+          PlanAnualTrimestralizado: trimestreConContenidosFiltrados
+        }
+      };
+      
+      // Guardar datos de orientaciones en localStorage pero NO enviarlos al backend
+      const datosOrientaciones = {
+        recursos: data.recursos || "",
+        orientacionesPractica: data.orientacionesPractica || "",
+        orientacionesTeoria: data.orientacionesTeoria || "",
+        orientacionesValoracion: data.orientacionesValoracion || "",
+        orientacionesProduccion: data.orientacionesProduccion || ""
+      };
+      
+      localStorage.setItem('orientacionesMetodologicas', JSON.stringify(datosOrientaciones));
+      console.log('💾 Datos de orientaciones guardados en localStorage (NO se envían al backend)');
+      
+      // Debug: mostrar datos completos
+      import('../utils/debugFlow').then(({ debugFlow }) => {
+        debugFlow.logCompleteDataForGeneration(completeDataForGeneration);
+      });
+      
+      import('../utils/jsonLogger').then(({ jsonLogger }) => {
+        jsonLogger.logFinalJSON(completeDataForGeneration);
+      });
+      
+      // Mostrar en consola lo que se va a enviar
+      console.log('🚀 === DATOS PARA GENERAR PDC (ESTRUCTURA CORRECTA) ===');
+      console.log('📊 JSON completo que se enviará:');
+      console.log(JSON.stringify(completeDataForGeneration, null, 2));
+      console.log('📝 Resumen de datos:');
+      console.log('- Mes:', completeDataForGeneration.datosPersonales.mes);
+      console.log('- Título PSP:', completeDataForGeneration.datosPersonales.tituloPSP);
+      console.log('- Plan Trimestralizado:', completeDataForGeneration.datosPersonales.PlanAnualTrimestralizado.length, 'trimestres');
+      console.log('- Contenidos seleccionados:', contenidosSeleccionados.length, 'subtemas');
+      
+      // Guardar todos los datos del PDC en localStorage como JSON
+      localStorage.setItem('pdcCompleteData', JSON.stringify(completeDataForGeneration));
+      console.log('💾 Datos completos guardados en localStorage como "pdcCompleteData"');
+
+      // ✅ CORREGIDO: Enviar completeDataForGeneration en lugar de configData
+      console.log('📤 === ENVIANDO DATOS AL BACKEND ===');
+      console.log('✅ Enviando completeDataForGeneration (CORRECTO)');
+      console.log('📊 Datos que se envían:', completeDataForGeneration);
+      
+      const result = await apiService.submitPDCConfig(completeDataForGeneration);
+      
+      if (result.success) {
+        // Verificar si se descargó un archivo
+        if (result.downloadedFile) {
+          console.log('✅ Archivo descargado exitosamente:', result.downloadedFile);
+          setIsDownloading(true);
+          // Pequeño delay para mostrar el estado de descarga
+          setTimeout(() => {
+            setIsDownloading(false);
+            setNotification({
+              type: 'success',
+              message: 'PDC generado exitosamente',
+              filename: result.downloadedFile
+            });
+            // Limpiar notificación después de 5 segundos
+            setTimeout(() => setNotification(null), 5000);
+          }, 1000);
+        } else if (result.pdcId) {
+          // Si no se descargó archivo pero hay pdcId, mostrar vista previa
+          setGeneratedPDCId(result.pdcId);
+        } else {
+          // Solo mensaje de éxito
+          setNotification({
+            type: 'success',
+            message: result.message || "PDC generado exitosamente"
+          });
+          setTimeout(() => setNotification(null), 5000);
+        }
       } else {
         throw new Error(result.error || "Error al generar el PDC");
       }
     } catch (error) {
       console.error('Error generating PDC:', error);
-      alert(error instanceof Error ? error.message : "Error al generar el PDC");
+      setNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : "Error al generar el PDC"
+      });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsGenerating(false);
     }
@@ -645,7 +879,7 @@ export function PDCConfigForm() {
             <Button 
               type="submit" 
               size="lg"
-              disabled={isGenerating}
+              disabled={isGenerating || isDownloading}
               className="min-w-64 text-lg py-6 bg-primary hover:bg-primary/90"
             >
               {isGenerating ? (
@@ -653,14 +887,56 @@ export function PDCConfigForm() {
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                   Generando PDC...
                 </>
+              ) : isDownloading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Descargando archivo...
+                </>
               ) : (
                 <>
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  Generar mi PDC
+                  Generar y Descargar PDC
                 </>
               )}
             </Button>
           </div>
+
+          {/* Notificación de éxito/error */}
+          {notification && (
+            <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
+              notification.type === 'success' 
+                ? 'bg-green-50 border border-green-200 text-green-800' 
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  {notification.type === 'success' ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <div className="h-5 w-5 text-red-600">⚠️</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium">
+                    {notification.type === 'success' ? '¡Éxito!' : 'Error'}
+                  </h4>
+                  <p className="text-sm mt-1">{notification.message}</p>
+                  {notification.filename && (
+                    <div className="mt-2 flex items-center space-x-2 text-xs">
+                      <Download className="h-3 w-3" />
+                      <span>Archivo descargado: {notification.filename}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setNotification(null)}
+                  className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       </Form>
     </div>

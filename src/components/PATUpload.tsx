@@ -61,11 +61,15 @@ export function PATUpload() {
         }
       }
     },
-    [handleFileChange],
+    [handleFileChange, fileInputRef],
   );
 
   const handleGeneratePDC = async () => {
     if (!fileName) return;
+
+    console.log('=== INICIANDO GENERACIÓN PDC ===');
+    console.log('Nombre del archivo:', fileName);
+    console.log('Preview URL:', previewUrl);
 
     setIsProcessing(true);
     setError(null);
@@ -85,13 +89,23 @@ export function PATUpload() {
 
       // Obtener el archivo real del input
       const file = fileInputRef.current?.files?.[0];
+      console.log('Archivo obtenido del input:', file);
+      
       if (!file) {
         throw new Error("No se encontró el archivo");
       }
 
+      console.log('Detalles del archivo:');
+      console.log('- Nombre:', file.name);
+      console.log('- Tamaño:', file.size, 'bytes');
+      console.log('- Tipo:', file.type);
+      console.log('- Última modificación:', file.lastModified);
+
       // ===== SUBIDA AL BACKEND =====
-      // TODO: Cambiar a apiService cuando el backend esté listo
-      const uploadResult = await simulationService.uploadPAT(file);
+      console.log('Enviando archivo al backend:', file.name, file.size);
+      const uploadResult = await apiService.uploadPAT(file);
+      console.log('Respuesta del backend:', uploadResult);
+      
       if (!uploadResult.success) {
         throw new Error(uploadResult.error || "Error al subir el archivo");
       }
@@ -99,13 +113,12 @@ export function PATUpload() {
       setFileId(uploadResult.fileId!);
       setUploadProgress(100);
 
-      // ===== GENERACIÓN DE PDC =====
-      // TODO: Cambiar a apiService cuando el backend esté listo
-      const generateResult = await simulationService.generatePDC(uploadResult.fileId!);
-      if (!generateResult.success) {
-        throw new Error(generateResult.error || "Error al generar el PDC");
-      }
+      console.log('✅ Datos del PAT extraídos y guardados exitosamente');
+      console.log('📄 Datos extraídos:', uploadResult.extractedData);
 
+      // Saltar el paso de generación de PDC y ir directamente a configuración
+      console.log('🚀 Navegando a configuración de PDC...');
+      
       // Navegar a la página de configuración
       window.location.href = '/configurar-pdc';
 

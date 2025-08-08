@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import GenerarPDC from "./pages/GenerarPDC";
 import ConfigurarPDC from "./pages/ConfigurarPDC";
 import NotFound from "./pages/NotFound";
+import { JSONViewer } from "./components/JSONViewer";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/generar-pdc" element={<GenerarPDC />} />
           <Route path="/configurar-pdc" element={<ConfigurarPDC />} />
+          <Route path="/json-viewer" element={<JSONViewer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
